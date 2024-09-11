@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Cezs Music",
@@ -13,7 +13,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="flex flex-col items-center w-screen h-screen bg-[#2e2e2e] ">
+        <Image src="/icon.png" alt="cezs logo" width="144" height="144" />
+        {children}
+      </body>
     </html>
   );
 }
