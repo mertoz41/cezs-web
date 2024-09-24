@@ -1,38 +1,41 @@
-"use client";
-import React, { FormEvent, useState } from "react";
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
-const Login = () => {
-  const [credentials, setCredentials] = useState<LoginCredentials>({username: '', password: ''});
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+import React from "react";
+import LoginForm from "@/app/components/loginForm";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-    fetch(`http://localhost:3000/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: credentials.username.trim(),
-        password: credentials.password.trim(),
-      }),
-    })
-      .then((resp) => resp.json())
-      .then((resp) => console.log(resp));
-  };
-  const handleOnChange = (e: FormEvent) => {
-    setCredentials({
-      ...credentials,
-      [(e.target as HTMLInputElement).name]: (e.target as HTMLInputElement)
-        .value,
-    });
+const Login = () => {
+  const logUserIn = async (formData: FormData) => {
+    "use server";
+    const username = formData.get("username");
+    const password = formData.get("password");
+    try {
+      await fetch(`http://localhost:3000/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      })
+        .then((resp) => resp.json())
+        .then((resp) => {
+          console.log("WE HERE", resp.token);
+          cookies().set("jwt", resp.token, { httpOnly: true });
+          // const cookie = cookies().get('jwt')
+
+          // console.log(cookie.value)
+        });
+    } catch (error) {
+    } finally {
+      redirect("/timeline");
+    }
   };
   return (
     <div className="flex flex-col items-center">
       <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl self-center">
-        <form className="card-body" onSubmit={handleSubmit}>
+        <form className="card-body" action={logUserIn}>
           <div className="form-control">
             <label className="label">
               <span className="label-text">Username</span>
@@ -40,7 +43,6 @@ const Login = () => {
             <input
               type="username"
               name="username"
-              onChange={handleOnChange}
               placeholder="username"
               className="input input-bordered"
               required
@@ -55,7 +57,6 @@ const Login = () => {
               placeholder="password"
               name="password"
               className="input input-bordered"
-              onChange={handleOnChange}
               required
             />
             <label className="label">
@@ -73,6 +74,7 @@ const Login = () => {
             <button className="btn btn-primary">Login</button>
           </div>
         </form>
+        {/* <LoginForm /> */}
       </div>
     </div>
   );
