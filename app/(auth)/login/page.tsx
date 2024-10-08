@@ -21,7 +21,7 @@ const Login = () => {
       })
         .then((resp) => resp.json())
         .then((resp) => {
-          console.log("WE HERE", resp.token);
+          // console.log("WE HERE", resp.token);
           cookies().set("jwt", resp.token, { httpOnly: true });
           // const cookie = cookies().get('jwt')
 

@@ -2,9 +2,10 @@
 import React, { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cookies } from "next/headers";
+// import Cookies from 'js-cookie';
 
 interface LoginCredentials {
-  // username: string;
+  username: string;
   password: string;
 }
 const LoginForm = () => {
@@ -30,7 +31,12 @@ const LoginForm = () => {
     })
       .then((resp) => resp.json())
       .then((resp) => {
-        // cookies().set("jwt", resp.token);
+        // document.cookie="experimenting=experimenttetere"
+        // Cookies.set('jwtToken', fetchedToken, { 
+        //   expires: 1, // 1-day expiry 
+        //   path: '/' // accessible across the entire app
+        // });
+        cookies().set("jwt", resp.token);
         console.log(resp);
         router.push("/timeline");
       });
