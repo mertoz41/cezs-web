@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import ThumbnailContainer from "./thumbnailContainer";
 import PopularCount from "./popularCount";
-const Filters = ({ data }: { data: any }) => {
+const Filters = ({ data, token }: { data: any; token: string }) => {
   const {
     post_instrument_filters,
     post_genre_filters,
@@ -23,9 +23,13 @@ const Filters = ({ data }: { data: any }) => {
   } = data;
 
   const [display, setDisplay] = useState<string>("posts");
+  const [selectedInstruments, setSelectedInstruments] = useState<any[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<any[]>([]);
+  const [displayContent, setDisplayContent] = useState<any[]>(last_posts);
+
   const renderSearchButton = (title: string, count: number) => (
     <h1
-      onClick={() => setDisplay(title)}
+      onClick={() => changeSection(title)}
       className={`text-center text-${
         title == display ? "green-500" : "red-500"
       } border-2 p-1 rounded-lg cursor-pointer`}
@@ -33,6 +37,23 @@ const Filters = ({ data }: { data: any }) => {
       {title} {count}
     </h1>
   );
+
+  const changeSection = (title: string) => {
+    switch (title) {
+      case "posts":
+        setDisplayContent(last_posts);
+        break;
+      case "users":
+        setDisplayContent(last_users);
+        break;
+      case "bands":
+        setDisplayContent(last_bands);
+        break;
+    }
+    setSelectedGenres([]);
+    setSelectedInstruments([]);
+    setDisplay(title);
+  };
 
   const renderSearchOptions = () => (
     <div className="container flex justify-between p-4">
@@ -43,6 +64,28 @@ const Filters = ({ data }: { data: any }) => {
       {renderSearchButton("artists", artist_count)}
     </div>
   );
+
+  const getFilteredData = (instruments: any, genres: any) => {
+    fetch(`http://localhost:3000/${display}filtersearch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        instruments: instruments,
+        genres: genres,
+      }),
+    })
+      .then((resp) => resp.json())
+      .then((resp) => {
+        if (!resp.length) {
+          changeSection(display);
+        } else {
+          setDisplayContent(resp);
+        }
+      });
+  };
 
   const renderInstrumentsSection = () => {
     let filters;
@@ -55,7 +98,7 @@ const Filters = ({ data }: { data: any }) => {
       <div>
         <h1>instruments</h1>
         <div className="container flex justify-between p-4">
-          {filters.map((item: any, i: number) => renderMusicButton(item, i))}
+          {filters.map((item: any) => renderInstrumentButton(item))}
         </div>
       </div>
     );
@@ -71,24 +114,66 @@ const Filters = ({ data }: { data: any }) => {
       <div>
         <h1>genres</h1>
         <div className="container flex justify-between p-4">
-          {post_genre_filters.map((item: any, i: number) =>
-            renderMusicButton(item, i)
-          )}
+          {post_genre_filters.map((item: any) => renderGenreButton(item))}
         </div>
       </div>
     );
   };
-  const renderMusicButton = (item: any, i: number) => (
+
+  const selectInstrument = (inst: number) => {
+    let updatedInstruments;
+    if (selectedInstruments.includes(inst)) {
+      updatedInstruments = selectedInstruments.filter(
+        (instrument) => instrument != inst
+      );
+      setSelectedInstruments(updatedInstruments);
+    } else {
+      updatedInstruments = [...selectedInstruments, inst];
+      setSelectedInstruments(updatedInstruments);
+    }
+    getFilteredData(updatedInstruments, selectedGenres);
+  };
+
+  const selectGenre = (genre: number) => {
+    let updatedGenres;
+    if (selectedGenres.includes(genre)) {
+      updatedGenres = selectedGenres.filter((genr) => genr != genre);
+      setSelectedGenres(updatedGenres);
+    } else {
+      updatedGenres = [...selectedGenres, genre];
+      setSelectedGenres(updatedGenres);
+    }
+    getFilteredData(selectedInstruments, updatedGenres);
+  };
+  const renderGenreButton = (item: any) => (
     <h1
-      key={i}
-      className={`text-center text-red-500
+      onClick={() => selectGenre(item.id)}
+      key={item.id}
+      className={`text-center ${
+        selectedGenres.includes(item.id) ? "text-red-500" : "text-green-500"
+      }
+    border-2 p-1 rounded-lg cursor-pointer`}
+    >
+      {item.name}
+    </h1>
+  );
+
+  const renderInstrumentButton = (item: any) => (
+    <h1
+      onClick={() => selectInstrument(item.id)}
+      key={item.id}
+      className={`text-center ${
+        selectedInstruments.includes(item.id)
+          ? "text-red-500"
+          : "text-green-500"
+      }
     border-2 p-1 rounded-lg cursor-pointer`}
     >
       {item.name}
     </h1>
   );
   return (
-    <div className="w-1/3">
+    <div className="w-2/4">
       {renderSearchOptions()}
       {display === "songs" || display === "artists" ? null : (
         <>
@@ -97,13 +182,13 @@ const Filters = ({ data }: { data: any }) => {
         </>
       )}
       {display === "posts" ? (
-        <ThumbnailContainer list={last_posts} type={"thumbnail"} />
+        <ThumbnailContainer list={displayContent} type={"thumbnail"} />
       ) : null}
       {display === "users" ? (
-        <ThumbnailContainer list={last_users} type={"avatar"} />
+        <ThumbnailContainer list={displayContent} type={"avatar"} />
       ) : null}
       {display === "bands" ? (
-        <ThumbnailContainer list={last_bands} type={"picture"} />
+        <ThumbnailContainer list={displayContent} type={"picture"} />
       ) : null}
       {display === "songs" ? (
         <PopularCount

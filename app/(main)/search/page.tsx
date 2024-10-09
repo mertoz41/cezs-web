@@ -19,7 +19,7 @@ const Search = async () => {
   actualData = JSON.parse(JSON.stringify(actualData));
   return (
     <div className="flex flex-col items-center w-2/3">
-      <Filters data={actualData} />
+      <Filters data={actualData} token={token.value} />
     </div>
   );
 };
